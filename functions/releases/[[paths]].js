@@ -1,27 +1,28 @@
 export async function onRequest(context) {
   const { request, params } = context
-  const pathSegments = params.path || []
-  const githubPath = pathSegments.join('/')
+  const segs = params.path || []
 
-  if (!githubPath) {
-    return new Response('Bad Request: missing path', { status: 400 })
+  // 自动补 v（防手滑）
+  if (segs[0] && !segs[0].startsWith('v')) {
+    segs[0] = 'v' + segs[0]
   }
 
-  const targetUrl = `https://github.com/A42Null/luogu-electron/releases/download/${githubPath}`
+  // 每段单独 encode，保留斜杠
+  const encodedPath = segs.map(s => encodeURIComponent(s)).join('/')
+  const targetUrl = `https://github.com/A42Null/luogu-electron/releases/download/${encodedPath}`
 
-  // 关键：不手动塞 Range 给 GitHub 的 302 签发端点
-  // 让 Fetch 自动跟随重定向（Pages Functions 默认就是 follow）
+  // 首次请求：GET，不带 Range，标准 UA，让 GitHub 先 302 到 objects 域
   const upstream = await fetch(targetUrl, {
-    method: request.method === 'HEAD' ? 'GET' : request.method,
+    method: 'GET',
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; luogu-electron-cdn)'
-      // 注意：不在这里加 'Range'
-    }
+    },
+    redirect: 'follow'
   })
 
   if (!upstream.ok) {
     return new Response(
-      `Upstream error: ${upstream.status} ${upstream.statusText}\n${targetUrl}`,
+      `Upstream ${upstream.status} ${upstream.statusText}\n${targetUrl}`,
       { status: upstream.status }
     )
   }

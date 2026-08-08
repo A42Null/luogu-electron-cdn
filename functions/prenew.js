@@ -70,8 +70,8 @@ export async function onRequest() {
       ${assetsHtml}
     </ul>
     <p style="margin-top:20px;color:#888;font-size:13px">
-      ⚠️ 此为测试版本，可能存在不稳定情况<br/>
-      ⚡ 所有下载均通过 Cloudflare 加速
+      此为测试版本，可能存在不稳定情况<br/>
+      所有下载均通过 Cloudflare 加速
     </p>
   </div>
 </body>

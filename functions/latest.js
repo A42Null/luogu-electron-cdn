@@ -58,7 +58,7 @@ export async function onRequest() {
       ${assetsHtml}
     </ul>
     <p style="margin-top:20px;color:#888;font-size:13px">
-      ⚡ 所有下载均通过 Cloudflare 加速，无需 GitHub 直连
+      所有下载均通过 Cloudflare 加速，无需 GitHub 直连
     </p>
   </div>
 </body>

@@ -2,47 +2,61 @@ export async function onRequest(context) {
   const { request, params } = context
   const segs = params.path || []
 
-  // 自动补 v
+  // 自动补 v（兼容 /releases/1.0.2-hotfix.1 → /releases/v1.0.2-hotfix.1）
   if (segs[0] && !segs[0].startsWith('v')) {
     segs[0] = 'v' + segs[0]
   }
 
+  // 路径分段编码，支持中文/空格（虽然你现在已改成纯英文）
   const encodedPath = segs.map(s => encodeURIComponent(s)).join('/')
   const githubUrl = `https://github.com/A42Null/luogu-electron/releases/download/${encodedPath}`
 
-  // 第一步：只拿 302，不跟随
-  const redirectResp = await fetch(githubUrl, {
-    method: 'GET',
-    headers: { 'User-Agent': 'curl/8.0' },
-    redirect: 'manual'
-  })
+  // 只保留必要的请求头
+  const headers = new Headers()
+  headers.set('User-Agent', 'Mozilla/5.0 (compatible; luogu-electron-cdn)')
+  headers.set('Accept', '*/*')
 
-  if (redirectResp.status !== 302 && redirectResp.status !== 301) {
-    // 不是重定向，直接透传（比如 404/200 yml 情况）
-    const h = new Headers(redirectResp.headers)
-    h.set('Access-Control-Allow-Origin', '*')
-    return new Response(redirectResp.body, { status: redirectResp.status, headers: h })
+  // 透传 Range（electron-updater 断点续传必须）
+  const range = request.headers.get('range')
+  if (range) {
+    headers.set('Range', range)
   }
 
-  const location = redirectResp.headers.get('Location')
-  if (!location) {
-    return new Response('No Location from GitHub', { status: 502 })
-  }
-
-  // 第二步：请求真正的对象存储地址，透传客户端原始头（Range 等）
-  const finalResp = await fetch(location, {
-    method: request.method,
-    headers: request.headers,
+  // ✅ 关键：让 CF 自动跟随 302，不手动干预
+  const upstream = await fetch(githubUrl, {
+    method: request.method === 'HEAD' ? 'GET' : request.method,
+    headers,
     redirect: 'follow'
   })
 
-  const outHeaders = new Headers(finalResp.headers)
-  outHeaders.set('Access-Control-Allow-Origin', '*')
-  outHeaders.set('Accept-Ranges', 'bytes')
-  outHeaders.set('Cache-Control', 'public, max-age=86400')
+  if (!upstream.ok && upstream.status !== 206) {
+    return new Response(
+      `Upstream ${upstream.status} ${upstream.statusText}\n${githubUrl}`,
+      { status: upstream.status }
+    )
+  }
 
-  return new Response(finalResp.body, {
-    status: finalResp.status,
-    headers: outHeaders
+  // 构造干净的响应头
+  const responseHeaders = new Headers()
+  responseHeaders.set('Access-Control-Allow-Origin', '*')
+  responseHeaders.set('Accept-Ranges', 'bytes')
+  responseHeaders.set('Cache-Control', 'public, max-age=86400')
+
+  // 透传关键下载头
+  const contentType = upstream.headers.get('Content-Type')
+  if (contentType) responseHeaders.set('Content-Type', contentType)
+
+  const contentLength = upstream.headers.get('Content-Length')
+  if (contentLength) responseHeaders.set('Content-Length', contentLength)
+
+  const contentRange = upstream.headers.get('Content-Range')
+  if (contentRange) responseHeaders.set('Content-Range', contentRange)
+
+  const etag = upstream.headers.get('ETag')
+  if (etag) responseHeaders.set('ETag', etag)
+
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: responseHeaders
   })
 }

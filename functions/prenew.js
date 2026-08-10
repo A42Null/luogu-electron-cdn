@@ -44,7 +44,7 @@ export async function onRequest() {
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>洛谷客户端 - 最新测试版</title>
+  <title>洛谷非官方客户端 - 最新测试版</title>
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <style>
     body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto; background:#f6f8fa; padding:40px }

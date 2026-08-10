@@ -20,7 +20,7 @@ export async function onRequest() {
     .replace(/^# (.*)$/gm, '<h1>$1</h1>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
     .replace(/\n/g, '<br>')
 
   const html = `<!DOCTYPE html>
@@ -36,15 +36,15 @@ export async function onRequest() {
   a { color:#0366d6; text-decoration:none }
   a:hover { text-decoration:underline }
   code { background:#eaecef; padding:2px 6px; border-radius:4px; font-size:13px }
-  .top { display:flex; justify-content:space-between; align-items:center }
+  .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px }
   .top a { font-size:14px; color:#57606a }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top">
-    <div></div>
-    <a href="/releases">📦 所有 Releases →</a>
+    <a href="https://github.com/A42Null/luogu-electron" target="_blank" rel="noopener">GitHub 仓库</a>
+    <a href="/releases">所有 Releases</a>
   </div>
   ${htmlMd}
 </div>
@@ -52,6 +52,9 @@ export async function onRequest() {
 </html>`
 
   return new Response(html, {
-    headers: { 'Content-Type': 'text/html;charset=UTF-8', 'Cache-Control': 'public, max-age=300' }
+    headers: {
+      'Content-Type': 'text/html;charset=UTF-8',
+      'Cache-Control': 'public, max-age=300'
+    }
   })
 }

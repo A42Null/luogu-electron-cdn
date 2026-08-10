@@ -1,9 +1,7 @@
 export async function onRequest(context) {
   const { request } = context
-
   const url = new URL(request.url)
-
-  let rest = url.pathname.replace(/^\/releases\/?/, '')
+  const rest = url.pathname.replace(/^\/releases\/?/, '')
 
   if (!rest) {
     return context.next()

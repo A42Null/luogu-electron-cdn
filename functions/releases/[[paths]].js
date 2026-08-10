@@ -3,12 +3,10 @@ export async function onRequest(context) {
 
   const url = new URL(request.url)
 
-  // 例：/releases/v1.0.2-hotfix.1/luogu-setup-1.0.2-hotfix.1-x64.exe
-  // pathname 去掉开头的 /releases/
   let rest = url.pathname.replace(/^\/releases\/?/, '')
 
   if (!rest) {
-    return new Response('Bad request: missing release file path', { status: 400 })
+    return context.next()
   }
 
   // 兼容 /releases/1.0.2-hotfix.1/xxx.exe -> 自动补 v
